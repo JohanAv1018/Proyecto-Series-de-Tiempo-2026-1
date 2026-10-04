@@ -1,4 +1,30 @@
 # ==========================================================
+# INFORME SEMANA 1 SERIES DE TIEMPO GRUPO 6
+#
+# Ana Sofía Salazar Álvarez
+# Winston Obeymar Lucano Villota
+# Julian Camilo Tobo Tenen
+# Johan Steven Avilan Peñaloza
+#
+# Universidad Nacional de Colombia - Departamento de Estadística
+#
+# Serie: MSCI COLCAP (cierre diario, en puntos)
+# Fecha de corte de los datos: viernes 2 de octubre de 2026
+# Pronóstico: lunes 5 al viernes 9 de octubre de 2026 (h = 1,...,5)
+#
+# Modelos: ETS, Naive y sNaive (lag 5)
+#
+# Validación: holdout repetido sin traslape (bloques de h = 5),
+#             ventana expansible y fija,
+#             con y sin recalibración
+#
+# Métrica: RMSE por paso y RMSE multi-paso
+#
+# Datos: Banco de la República
+# ==========================================================
+
+
+# ==========================================================
 # PREELIMINARES
 # ==========================================================
 
