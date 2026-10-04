@@ -2,6 +2,8 @@
 # INFORME SEMANA 1 SERIES DE TIEMPO GRUPO 6
 #
 # Ana Sofía Salazar Álvarez
+# Winston Obeymar Lucano Villota
+# Julian Camilo Tobo Tenen
 # Johan Steven Avilan Peñaloza
 #
 # Universidad Nacional de Colombia - Departamento de Estadística
@@ -10,7 +12,7 @@
 # Fecha de corte de los datos: viernes 2 de octubre de 2026
 # Pronóstico: lunes 5 al viernes 9 de octubre de 2026 (h = 1,...,5)
 #
-# Modelos: ETS, Naive y sNaive (lag 5)
+# Modelos: ETS, Naive, sNaive (lag 5) y Drift
 #
 # Validación: holdout repetido sin traslape (bloques de h = 5),
 #             ventana expansible y fija,
@@ -29,6 +31,9 @@
 install.packages("pacman")  #Solo una vez
 library(pacman)
 p_load(fpp3, dplyr, tidyr, purrr, readxl, lubridate, readr, ggplot2)
+
+# Mostrar decimales en las tablas (por defecto tibble muestra solo 3 cifras significativas)
+options(pillar.sigfigs = 7)
 
 
 # ==========================================================
@@ -137,6 +142,13 @@ evaluar_modelo <- function(serie,
         
       }
       
+      if(modelo == "Drift") {
+        
+        fit <- train |>
+          model(RW(colcap ~ drift()))
+        
+      }
+      
     } else {
       
       fit <- refit(fit, train, reestimate = FALSE)
@@ -179,7 +191,7 @@ evaluar_modelo <- function(serie,
   ))
   
 }
-    
+
 # ==========================================================
 # 4. ESCENARIOS
 # ==========================================================
@@ -198,7 +210,11 @@ escenarios <- tribble(
   
   "sNaive_expansible", "expansible", TRUE, "sNaive",
   
-  "sNaive_fija", "fija", TRUE, "sNaive"
+  "sNaive_fija", "fija", TRUE, "sNaive",
+  
+  "Drift_expansible", "expansible", TRUE, "Drift",
+  
+  "Drift_fija", "fija", TRUE, "Drift"
 )
 
 
@@ -252,7 +268,7 @@ tabla_final <- map_dfr(
   }
 )
 
-print(tabla_final)
+print(tabla_final, n = Inf)
 
 
 # ==========================================================
@@ -266,7 +282,7 @@ mejor_modelo <- tabla_final |>
 print(mejor_modelo)
 
 nombre_ganador <- mejor_modelo$Modelo
-
+nombre_ganador
 
 # ==========================================================
 # 8. AJUSTE FINAL
@@ -303,6 +319,13 @@ if(grepl("sNaive", nombre_ganador)) {
   
 }
 
+if(grepl("Drift", nombre_ganador)) {
+  
+  modelo_final <- serie_final |>
+    model(RW(colcap ~ drift()))
+  
+}
+
 forecast_final <- forecast(modelo_final, h = h)
 
 # Pronósticos con fecha (lunes 5 a viernes 9 de octubre de 2026)
@@ -311,7 +334,8 @@ pronosticos <- tibble(
   pronostico = round(forecast_final$.mean, 2)
 )
 
-print(pronosticos)
+# Se imprime como texto con 2 decimales fijos (el tibble recorta decimales al mostrar numericos)
+print(pronosticos |> mutate(pronostico = sprintf("%.2f", pronostico)), n = Inf)
 
 # ==========================================================
 # 9. GRÁFICO FINAL
