@@ -2,8 +2,6 @@
 # INFORME SEMANA 1 SERIES DE TIEMPO GRUPO 6
 #
 # Ana Sofía Salazar Álvarez
-# Winston Obeymar Lucano Villota
-# Julian Camilo Tobo Tenen
 # Johan Steven Avilan Peñaloza
 #
 # Universidad Nacional de Colombia - Departamento de Estadística
