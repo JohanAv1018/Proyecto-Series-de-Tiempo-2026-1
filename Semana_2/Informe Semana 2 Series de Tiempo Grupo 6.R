@@ -260,7 +260,6 @@ tabla_final <- map_dfr(
       RMSE_h2 = res$rmse_horizonte[2],
       RMSE_h3 = res$rmse_horizonte[3],
       RMSE_h4 = res$rmse_horizonte[4],
-      RMSE_h5 = res$rmse_horizonte[5],
       
       RMSE_global = res$rmse_global
     )
@@ -330,7 +329,7 @@ forecast_final <- forecast(modelo_final, h = h)
 
 # Pronósticos con fecha (lunes 5 a viernes 9 de octubre de 2026)
 pronosticos <- tibble(
-  fecha = seq(as.Date("2026-10-05"), as.Date("2026-10-09"), by = "day"),
+  fecha = seq(as.Date("2026-10-13"), as.Date("2026-10-16"), by = "day"),
   pronostico = round(forecast_final$.mean, 2)
 )
 
