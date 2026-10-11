@@ -1,5 +1,5 @@
 # ==========================================================
-# INFORME SEMANA 1 SERIES DE TIEMPO GRUPO 6
+# INFORME SEMANA 2 SERIES DE TIEMPO GRUPO 6
 #
 # Ana Sofía Salazar Álvarez
 # Winston Obeymar Lucano Villota
@@ -12,9 +12,9 @@
 # Fecha de corte de los datos: viernes 9 de octubre de 2026
 # Pronóstico: martes 13 al viernes 16 de octubre de 2026 (h = 1,...,4)
 #
-# Modelos: ETS, Naive, sNaive (lag 5) y Drift
+# Modelos: ETS, Naive, sNaive (lag 4) y Drift
 #
-# Validación: holdout repetido sin traslape (bloques de h = 5),
+# Validación: holdout repetido sin traslape (bloques de h = 4),
 #             ventana expansible y fija,
 #             con y sin recalibración
 #
@@ -64,8 +64,8 @@ datos <- read_excel(tmp) %>%
 
 inicio_ventana <- as.Date("2021-05-28")
 h <- 4      
-n_bloques_eval <- 100    
-ancho_fijo <- 500 
+n_bloques_eval <- 100 
+ancho_fijo <- 500
 
 serie <- datos %>%
   filter(fecha >= inicio_ventana) %>%
@@ -138,7 +138,7 @@ evaluar_modelo <- function(serie,
       if(modelo == "sNaive") {
         
         fit <- train |>
-          model(SNAIVE(colcap ~ lag(5)))
+          model(SNAIVE(colcap ~ lag(4)))
         
       }
       
@@ -314,7 +314,7 @@ if(grepl("Naive", nombre_ganador)) {
 if(grepl("sNaive", nombre_ganador)) {
   
   modelo_final <- serie_final |>
-    model(SNAIVE(colcap ~ lag(5)))
+    model(SNAIVE(colcap ~ lag(4)))
   
 }
 
@@ -342,7 +342,7 @@ print(pronosticos |> mutate(pronostico = sprintf("%.2f", pronostico)), n = Inf)
 
 autoplot(forecast_final, serie) +
   labs(
-    title = "Pronóstico final (5 pasos adelante)",
+    title = "Pronóstico final (4 pasos adelante)",
     y = "Colcap"
   )
 
