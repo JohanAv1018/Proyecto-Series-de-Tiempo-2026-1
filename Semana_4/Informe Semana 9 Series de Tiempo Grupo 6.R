@@ -10,7 +10,7 @@ W_FINAL      <- NULL
 
 # ---- 1. Datos ----
 
-datos <- read_xlsx("COLCAP_datos_usados_Semana4_corte_2026-10-23.xlsx", sheet = 1, col_types = "text")
+datos <- read_xlsx("Semana_4/colcap_semana9.xlsx", sheet = 1, col_types = "text")
 names(datos) <- c("Fecha", "COLCAP")
 datos$Fecha  <- suppressWarnings(dmy(datos$Fecha))
 datos        <- datos |> filter(!is.na(Fecha))
