@@ -10,7 +10,7 @@ W_FINAL      <- NULL
 
 # ---- 1. Datos ----
 
-datos <- read_xlsx("COLCAP_datos_usados_Semana4_corte_2026-10-23.xlsx", sheet = 1, col_types = "text")
+datos <- read_xlsx("Semana_5/colcap_semana5.xlsx", sheet = 1, col_types = "text")
 names(datos) <- c("Fecha", "COLCAP")
 datos$Fecha  <- suppressWarnings(dmy(datos$Fecha))
 datos        <- datos |> filter(!is.na(Fecha))
@@ -49,20 +49,8 @@ nsdiffs(ts(y_log, frequency = 5))
 # ---- 3. Candidatos ----
 
 f_naive  <- function(x, h) naive(as.numeric(x), h = h)
-f_snaive <- function(x, h) snaive(ts(as.numeric(x), frequency = 5), h = h)
 f_drift  <- function(x, h) rwf(as.numeric(x), h = h, drift = TRUE)
-f_ses    <- function(x, h) ses(as.numeric(x), h = h)
-f_holt   <- function(x, h) holt(as.numeric(x), h = h)
-f_damp   <- function(x, h) holt(as.numeric(x), h = h, damped = TRUE)
 f_ets    <- function(x, h) forecast(ets(as.numeric(x)), h = h)
-
-f_arma <- function(x, h) {
-  x  <- as.numeric(x)
-  r  <- diff(log(x))
-  fit <- auto.arima(r, d = 0, seasonal = FALSE, stationary = TRUE)
-  pr <- as.numeric(forecast(fit, h = h)$mean)
-  list(mean = x[length(x)] * exp(cumsum(pr)))
-}
 
 f_arima <- function(x, h) {
   fit <- auto.arima(as.numeric(x), d = 1, seasonal = FALSE, lambda = 0)
@@ -74,50 +62,9 @@ f_arima210 <- function(x, h) {
   forecast(fit, h = h)
 }
 
-f_sarima <- function(x, h) {
-  fit <- auto.arima(ts(as.numeric(x), frequency = 5), d = 1, seasonal = TRUE, lambda = 0)
-  forecast(fit, h = h)
-}
-
-# ---- 3.1 Combinaciones (modelos en paralelo, se promedian pronosticos) ----
-
-pron_vec <- function(f, x, h) as.numeric(f(x, h)$mean)
-
-f_combo_media <- function(x, h) {
-  P <- cbind(pron_vec(f_ets, x, h), pron_vec(f_arima, x, h), pron_vec(f_naive, x, h))
-  list(mean = rowMeans(P))
-}
-
-f_combo_mediana <- function(x, h) {
-  P <- cbind(pron_vec(f_ets, x, h), pron_vec(f_arima, x, h), pron_vec(f_naive, x, h),
-             pron_vec(f_drift, x, h), pron_vec(f_damp, x, h))
-  list(mean = apply(P, 1, median))
-}
-
-# ---- 3.2 Hibridos por etapas (cada modelo trabaja sobre lo que dejo el anterior) ----
-
-# etapa 1: ETS sobre log del nivel; etapa 2: ARMA sobre sus residuos
-f_hib_ets_arma <- function(x, h) {
-  lx  <- log(as.numeric(x))
-  fit1 <- ets(lx, additive.only = TRUE)
-  p1   <- as.numeric(forecast(fit1, h = h)$mean)
-  fit2 <- auto.arima(as.numeric(residuals(fit1)), d = 0, seasonal = FALSE,
-                     stationary = TRUE)
-  p2   <- as.numeric(forecast(fit2, h = h)$mean)
-  list(mean = exp(p1 + p2))
-}
-
-# etapa 1: STL con ciclo semanal; etapa 2: ETS sobre la serie desestacionalizada
-f_hib_stl_ets <- function(x, h) {
-  stlf(ts(as.numeric(x), frequency = 5), h = h, method = "ets", lambda = 0)
-}
-
 modelos <- list(
-  naive = f_naive, snaive = f_snaive, drift = f_drift, ses = f_ses, holt = f_holt,
-  damped = f_damp, ets = f_ets,
-  arma = f_arma, arima = f_arima, arima210 = f_arima210, sarima = f_sarima,
-  combo_media = f_combo_media, combo_mediana = f_combo_mediana,
-  hib_ets_arma = f_hib_ets_arma, hib_stl_ets = f_hib_stl_ets
+  naive = f_naive, drift = f_drift, ets = f_ets,
+  arima = f_arima, arima210 = f_arima210
 )
 
 # ---- 4. Validacion ----
@@ -149,9 +96,9 @@ dm_p <- function(e_mod, e_ref, k) {
 
 y <- datos$COLCAP
 n <- length(y)
-h <- 5
-gap_dias <- 5
-hs <- c(1, 3, 5)
+h <- 4
+gap_dias <- 4
+hs <- c(1, 2, 4)
 
 disenos <- list(
   list(muestreo = "rep_no_overlap_gap", ventana = "expansiva", w = NULL),
@@ -188,7 +135,7 @@ for (d in disenos) {
 tabla_val <- do.call(rbind, resultados)
 
 tabla_val |>
-  filter(horizonte == 5) |>
+  filter(horizonte == 4) |>
   arrange(muestreo, ventana, w, rmse)
 
 tabla_val |>
@@ -202,71 +149,21 @@ fit_arima <- auto.arima(y_log, d = 1, seasonal = FALSE,
 summary(fit_arima)
 checkresiduals(fit_arima, lag = 10)
 
-fit_arma_ret <- auto.arima(ret, d = 0, seasonal = FALSE, stationary = TRUE,
-                           stepwise = FALSE, approximation = FALSE)
-summary(fit_arma_ret)
+# Residuales de ARIMA(2,1,0) (Modelo elegido)
+fit_210 <- Arima(y_log, order = c(2, 1, 0), include.drift = TRUE)
+checkresiduals(fit_210, lag = 10)
 
 # ---- 6. Pronostico de la semana ----
 
 ultima <- max(datos$Fecha)
-cand   <- seq(ultima + 1, by = "day", length.out = 12)
-fechas_pron <- cand[wday(cand, week_start = 1) <= 5][1:5]
+fechas_pron <- as.Date(c("2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06"))  # lunes 2-nov festivo
 fechas_pron
 
 y_final <- if (is.null(W_FINAL)) y else tail(y, W_FINAL)
 
-pron <- sapply(modelos, function(f) as.numeric(f(ts(y_final), 5)$mean))
+pron <- sapply(modelos, function(f) as.numeric(f(ts(y_final), h)$mean))
 tabla_pron <- data.frame(fecha = fechas_pron, round(pron, 2))
 print(tabla_pron)
 
-dir.create("resultados", showWarnings = FALSE)
-saveRDS(tabla_val,  "resultados/tabla_val_arima.rds")
-saveRDS(tabla_pron, "resultados/tabla_pron_arima.rds")
 
-# ---- 7. Paseo aleatorio con drift y transformaciones ----
 
-lam <- BoxCox.lambda(y, method = "guerrero")
-lam
-
-f_rw_drift <- function(x, h) {
-  fit <- Arima(as.numeric(x), order = c(0, 1, 0), include.drift = TRUE, lambda = 0)
-  forecast(fit, h = h)
-}
-
-f_rw_drift_bc <- function(x, h) {
-  fit <- Arima(as.numeric(x), order = c(0, 1, 0), include.drift = TRUE, lambda = lam)
-  forecast(fit, h = h)
-}
-
-f_rw_drift_adj <- function(x, h) {
-  fit <- Arima(as.numeric(x), order = c(0, 1, 0), include.drift = TRUE, lambda = 0)
-  forecast(fit, h = h, biasadj = TRUE)
-}
-
-modelos_cmp <- list(naive = f_naive, arima = f_arima, drift = f_drift,
-                    rw_drift = f_rw_drift, rw_drift_bc = f_rw_drift_bc,
-                    rw_drift_adj = f_rw_drift_adj)
-
-cmp <- list()
-for (d in disenos) {
-  origenes <- generar_origenes(n, h, d$muestreo, gap = gap_dias)
-  errs <- lapply(modelos_cmp, function(f) evaluar_modelo(y, f, h, origenes, ventana = d$w))
-  rmse_ref <- sqrt(colMeans(errs$naive[, hs]^2, na.rm = TRUE))
-  for (m in names(errs)) {
-    rmse <- sqrt(colMeans(errs[[m]][, hs]^2, na.rm = TRUE))
-    cmp[[length(cmp) + 1]] <- data.frame(
-      muestreo = d$muestreo, w = ifelse(is.null(d$w), NA, d$w), modelo = m,
-      horizonte = hs, rmse_rel = round(rmse / rmse_ref, 4),
-      p_dm = round(sapply(hs, function(k) dm_p(errs[[m]], errs$naive, k)), 3)
-    )
-  }
-}
-tabla_cmp <- do.call(rbind, cmp)
-
-tabla_cmp |> filter(horizonte == 1) |> arrange(muestreo, w, rmse_rel)
-tabla_cmp |> filter(horizonte == 5) |> arrange(muestreo, w, rmse_rel)
-
-sapply(modelos_cmp, function(f) round(as.numeric(f(ts(y), 5)$mean), 2))
-
-cambio5 <- diff(log(y), lag = 5)
-mean(cambio5 > 0)
