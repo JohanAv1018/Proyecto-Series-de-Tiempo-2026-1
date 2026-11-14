@@ -10,8 +10,7 @@ FECHA_CAMBIO <- as.Date("2021-05-28")
 H <- 5
 
 # ---- 1. COLCAP ----
-# NOTA: ajuste el nombre del archivo al de su descarga (p.ej. "COLCAP_1.xlsx")
-datos <- read_xlsx("COLCAP_1.xlsx", sheet = 1, col_types = "text")
+datos <- read_xlsx("Semana_6/colcap_semana6.xlsx", sheet = 1, col_types = "text")
 names(datos) <- c("Fecha", "COLCAP")
 datos$Fecha  <- suppressWarnings(dmy(datos$Fecha))
 datos        <- datos |> filter(!is.na(Fecha))
@@ -49,12 +48,12 @@ alinear <- function(fechas, df) {
 }
 
 # Copia point-in-time: si ya existe, se reutiliza (reproducible sin depender de Yahoo)
-if (file.exists("exogenas_semana6.rds")) {
-  base <- readRDS("exogenas_semana6.rds")
+if (file.exists("Semana_6/exogenas_semana6.rds")) {
+  base <- readRDS("Semana_6/exogenas_semana6.rds")
 } else {
   base <- datos
   for (nm in names(simbolos)) base[[nm]] <- alinear(base$Fecha, bajar(simbolos[[nm]]))
-  saveRDS(base, "exogenas_semana6.rds")
+  saveRDS(base, "Semana_6/exogenas_semana6.rds")
 }
 
 summary(base)
@@ -187,6 +186,6 @@ tabla_pron <- data.frame(fecha = fechas_pron, round(base$COLCAP[n] * exp(p_fin),
 tabla_pron
 
 # Modelo entregado esta semana: paseo aleatorio con deriva (rw_drift)
-dir.create("resultados", showWarnings = FALSE)
-saveRDS(tabla_val,  "resultados/tabla_val_semana6.rds")
-saveRDS(tabla_pron, "resultados/tabla_pron_semana6.rds")
+dir.create("Semana_6/resultados", showWarnings = FALSE)
+saveRDS(tabla_val,  "Semana_6/resultados/tabla_val_semana6.rds")
+saveRDS(tabla_pron, "Semana_6/resultados/tabla_pron_semana6.rds")
