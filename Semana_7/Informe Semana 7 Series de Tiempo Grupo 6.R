@@ -119,7 +119,7 @@ int_arima <- function(t, recal = FALSE) {
   list(centro = exp(as.numeric(fc$mean)),
        li = exp(as.numeric(fc$lower[, 1])),
        ls = exp(as.numeric(fc$upper[, 1])))
-}
+} 
 
 # 3.4 ARIMA con bootstrap de residuos (estilo M3_4a_uso.R).
 #     Trayectoria futura = media + sum_j psi_{k-j} e_j, con e_j remuestreados:
